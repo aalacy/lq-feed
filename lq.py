@@ -9,19 +9,20 @@ import pdb
 import os
 from random import randint
 import threading
+from copy import copy
 
 # local paths
 BASE_PATH = os.path.abspath(os.curdir)
 
 postgresql="postgresql://postgres:onlylocalpass@localhost:5432/lq_feed"
-# postgresql_aws1 = ""
+postgresql_aws1 = "postgresql://postgres:onlylocalpassword@lq-feed.crejmwornuci.us-west-1.rds.amazonaws.com:5432/lq_feed"
 aws_access_key_id=""
 aws_secret_access_key=""
 
 # set up engine for database
 Base = declarative_base()
 metadata = MetaData()
-engine = create_engine(postgresql)
+engine = create_engine(postgresql_aws1)
 
 # random intervals
 INPUT_INTERVAL = 2
@@ -32,8 +33,7 @@ class Feed:
     random_tb_name = 'random_input'
     report_tb_name = 'report'
     columns = ['col1', 'col2', 'col3', 'col4']
-    prev_columns = ['col1', 'col2', 'col3', 'col4']
-    report_columns = []
+    prev_columns = []
     new_columns = []
     data_to_insert = []
 
@@ -43,6 +43,9 @@ class Feed:
 
         self.create_random_table()
         self.create_report_table()
+
+        self.read_existing_columns_from_table()
+        self.prev_columns = copy(self.columns)
 
     def create_random_table(self):
         with Session(engine) as s:
@@ -161,19 +164,20 @@ class Feed:
         if added_columns or removed_columns:
             # columns changed. report it
             report_data = { 'content': ''}
+            report_columns = []
             if added_columns:
                 report_data['content'] += f'{len(added_columns)} columns added, '
                 report_data['added_columns'] = ', '.join(added_columns)
-                self.report_columns.append('added_columns')
+                report_columns.append('added_columns')
             if removed_columns:
                 report_data['content'] += f'{len(removed_columns)} columns removed'
                 report_data['removed_columns'] = '"' +  '.join(removed_columns)' + '"'
-                self.report_columns.append('removed_columns')
+                report_columns.append('removed_columns')
 
-            self.report_columns.append('content')
+            report_columns.append('content')
             print(f'[detect column] {report_data["content"]}')
-            self.insert_data(self.report_tb_name, self.report_columns, report_data)
-            self.prev_columns = self.columns
+            self.insert_data(self.report_tb_name, report_columns, report_data)
+            self.prev_columns = copy(self.columns)
 
     # watch the input table in terms of column change
     def watch_table(self):
