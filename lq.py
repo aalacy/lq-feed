@@ -15,7 +15,7 @@ from copy import copy
 BASE_PATH = os.path.abspath(os.curdir)
 
 postgresql="postgresql://postgres:onlylocalpass@localhost:5432/lq_feed"
-postgresql_aws1 = "postgresql://postgres:onlylocalpassword@lq-feed.crejmwornuci.us-west-1.rds.amazonaws.com:5432/lq_feed"
+postgresql_aws1 = "postgresql://postgres:onlylocalpassword@***.us-west-1.rds.amazonaws.com:5432/lq_feed"
 aws_access_key_id=""
 aws_secret_access_key=""
 
